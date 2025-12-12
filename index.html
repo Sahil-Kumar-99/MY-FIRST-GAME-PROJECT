@@ -1,0 +1,519 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"> 
+    <title>Sahil Maurya's Nokia Style Car Dodging Game 🔥</title>
+    <style>
+        :root {
+            --game-width: 700px; 
+            --game-height: 650px;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: linear-gradient(180deg, #000 0%, #111 100%);
+            font-family: 'Courier New', monospace;
+            color: lime;
+            padding: 20px;
+            min-height: 100vh;
+        }
+        h1 {
+            text-align: center;
+            color: lime;
+            text-shadow: 0 0 20px lime;
+            margin-bottom: 30px;
+            font-size: 32px;
+        }
+        #container {
+            display: flex;
+            justify-content: center;
+            gap: 40px;
+            max-width: 1200px; 
+            margin: 0 auto;
+            flex-wrap: wrap; 
+        }
+        #game {
+            width: var(--game-width); 
+            height: var(--game-height);
+            background: linear-gradient(to bottom, #333 0%, #111 30%, #000 100%);
+            position: relative;
+            border: 12px solid lime;
+            border-radius: 25px;
+            overflow: hidden;
+            box-shadow: 0 0 50px lime, inset 0 0 100px rgba(0,255,0,0.05);
+        }
+        
+        .road-line {
+            position: absolute;
+            width: 12px;
+            height: 120px;
+            background: linear-gradient(to bottom, #fff 0%, #ffdd44 50%, #fff 100%);
+            border-radius: 6px;
+            box-shadow: 0 0 15px rgba(255,255,255,0.8);
+            animation: moveDown 1.2s linear infinite;
+        }
+        @keyframes moveDown {
+            0% { top: -150px; opacity: 0; }
+            10% { opacity: 1; }
+            90% { opacity: 1; }
+            100% { top: 700px; opacity: 0; }
+        }
+
+        #player {
+            position: absolute;
+            bottom: 40px;
+            width: 65px; 
+            height: 95px; 
+            z-index: 20;
+            transition: left 0.2s ease-out;
+            cursor: pointer;
+        }
+        #player::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            height: 70px;
+            background: linear-gradient(145deg, #ff4444, #cc0000);
+            border-radius: 12px 12px 35px 35px;
+            box-shadow: 
+                0 8px 20px rgba(0,0,0,0.6),
+                inset 0 2px 5px rgba(255,255,255,0.3);
+        }
+        #player::after {
+            content: '';
+            position: absolute;
+            top: 20px; left: 12px; right: 12px;
+            height: 25px;
+            background: #222;
+            border-radius: 8px;
+            box-shadow: inset 0 2px 5px rgba(0,0,0,0.5);
+        }
+        #player .wheel {
+            position: absolute;
+            bottom: -8px;
+            width: 16px; height: 16px; 
+            background: #333;
+            border-radius: 50%;
+            box-shadow: 
+                0 4px 10px rgba(0,0,0,0.7),
+                inset 0 2px 5px rgba(100,100,100,0.5);
+        }
+        #player .wheel.left { left: 8px; }
+        #player .wheel.right { right: 8px; }
+
+        .enemy {
+            position: absolute;
+            width: 75px;
+            height: 110px;
+            z-index: 10;
+        }
+        .enemy::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            height: 70px;
+            border-radius: 12px 12px 35px 35px;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.6);
+        }
+        .enemy::after {
+            content: '';
+            position: absolute;
+            top: 20px; left: 12px; right: 12px;
+            height: 25px;
+            border-radius: 8px;
+            box-shadow: inset 0 2px 5px rgba(0,0,0,0.5);
+        }
+        .enemy .wheel {
+            position: absolute;
+            bottom: -8px;
+            width: 20px; height: 20px;
+            background: #333;
+            border-radius: 50%;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.7);
+        }
+        .enemy .wheel.left { left: 8px; }
+        .enemy .wheel.right { right: 8px; }
+
+        .enemy.red::before { background: linear-gradient(145deg, #ff4444, #cc0000); }
+        .enemy.yellow::before { background: linear-gradient(145deg, #ffdd44, #ccaa00); }
+        .enemy.blue::before { background: linear-gradient(145deg, #4444ff, #0000cc); }
+        .enemy.green::before { background: linear-gradient(145deg, #44ff44, #00cc00); }
+        .enemy.purple::before { background: linear-gradient(145deg, #aa44ff, #8800cc); }
+        .enemy.cyan::before { background: linear-gradient(145deg, #44ffff, #00cccc); }
+        .enemy.magenta::before { background: linear-gradient(145deg, #ff44ff, #cc00cc); }
+        .enemy.orange::before { background: linear-gradient(145deg, #ff9944, #cc6600); }
+
+
+        #score {
+            position: absolute;
+            top: 25px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 36px;
+            font-weight: bold;
+            color: lime;
+            text-shadow: 0 0 15px lime;
+            z-index: 30;
+        }
+        #gameOver {
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: rgba(0,0,0,0.95);
+            color: #ff4444;
+            font-size: 56px;
+            text-align: center;
+            padding-top: 250px;
+            display: none;
+            z-index: 100;
+            text-shadow: 0 0 25px red;
+        }
+        #gameOver div {
+            font-size: 36px;
+            color: lime;
+            margin: 25px 0;
+        }
+        button {
+            padding: 18px 36px;
+            font-size: 28px;
+            background: linear-gradient(lime, #00ff00);
+            color: #000;
+            border: none;
+            border-radius: 15px;
+            cursor: pointer;
+            box-shadow: 0 8px 25px lime;
+            font-weight: bold;
+            transition: all 0.2s;
+        }
+        button:hover { transform: translateY(-3px); box-shadow: 0 12px 35px lime; }
+        button:active { transform: translateY(0); }
+
+        #controls {
+            display: flex;
+            justify-content: center;
+            align-items: center; 
+            gap: 20px; 
+            margin-top: 20px;
+        }
+        #leftBtn, #rightBtn {
+            width: 100px;
+            height: 100px;
+            font-size: 60px;
+            border-radius: 50%;
+            background: linear-gradient(145deg, lime, #00cc00);
+            border: 6px solid white;
+            box-shadow: 0 0 30px lime;
+        }
+        #speedBtn {
+             padding: 18px 25px;
+             font-size: 20px;
+             background: linear-gradient(to right, #ffdd44, #ffaa00);
+             color: #000;
+             border: none;
+             border-radius: 10px;
+             box-shadow: 0 5px 20px #ffdd44;
+             font-weight: bold;
+        }
+
+        #profile {
+            text-align: center;
+        }
+        .photo-box {
+            background: linear-gradient(145deg, #222, #000);
+            border: 8px solid lime;
+            border-radius: 25px;
+            padding: 25px;
+            box-shadow: 0 0 40px lime;
+        }
+        .photo-box img {
+            width: 200px;
+            height: 200px;
+            border-radius: 20px;
+            border: 4px solid white;
+            object-fit: cover;
+            box-shadow: 0 8px 30px rgba(0,0,0,0.5);
+        }
+        .name {
+            font-size: 32px;
+            margin-top: 20px;
+            text-shadow: 0 0 10px lime;
+            font-weight: bold;
+        }
+
+        #footer {
+            text-align: center;
+            margin-top: 50px;
+            padding: 30px;
+            background: #000;
+            border-top: 6px solid lime;
+            border-radius: 20px;
+            font-size: 22px;
+            max-width: 900px;
+            margin-left: auto;
+            margin-right: auto;
+            box-shadow: 0 -10px 40px lime;
+        }
+
+        @media (max-width: 900px) {
+            :root {
+                --game-width: 90vw; 
+                --game-height: 75vh;
+            }
+        }
+        
+        @media (max-width: 768px) {
+            #container { flex-direction: column; align-items: center; gap: 30px; }
+            h1 { font-size: 24px; }
+
+            #controls { gap: 15px; }
+            #leftBtn, #rightBtn { width: 70px; height: 70px; font-size: 40px; }
+            #speedBtn { font-size: 14px; padding: 10px 15px; }
+            
+            #score { font-size: 28px; top: 15px; }
+            #gameOver { font-size: 40px; padding-top: 150px; }
+            #gameOver div { font-size: 24px; }
+            button { padding: 12px 24px; font-size: 20px; }
+
+            .road-line { width: 10px; height: 100px; }
+        }
+    </style>
+</head>
+<body>
+    <h1>🚗 Sahil Maurya's Nokia Style Car Dodging Game 🔥</h1>
+    
+    <div id="container">
+        <div>
+            <div id="game">
+                <div id="score">Score: 0</div>
+                <div id="player">
+                    <div class="wheel left"></div>
+                    <div class="wheel right"></div>
+                </div>
+                <div id="gameOver">
+                    💥 GAME OVER! 💥<br><br>
+                    <div>Your Score: <span id="finalScore">0</span></div>
+                    <button onclick="resetGame()">Play Again 🚀</button>
+                </div>
+            </div>
+            <div id="controls">
+                <button id="leftBtn">←</button>
+                <button id="speedBtn">SPEED ⚡</button> 
+                <button id="rightBtn">→</button>
+            </div>
+        </div>
+        
+        <div id="profile">
+            <div class="photo-box">
+                <img src="logo.jpg" alt="Sahil Maurya">
+                <div class="name">Sahil Maurya</div>
+            </div>
+        </div>
+    </div>
+    
+    <div id="footer">
+        © 2025 Sahil Maurya | Today's Date: <span style="color:#ff4444;font-size:24px;">December 12, 2025</span>
+    </div>
+
+    <script>
+        let score = 0;
+        let gameActive = true;
+        let isSpeedBoost = false; 
+        let enemySpawnTimer; 
+        let lastEnemyLane = -1; 
+        
+        let lanes = []; 
+        let roadLinePositions = [];
+
+        const colors = ['red', 'yellow', 'blue', 'green', 'purple', 'cyan', 'magenta', 'orange'];
+
+        const player = document.getElementById('player');
+        const scoreDisplay = document.getElementById('score');
+        const speedBtn = document.getElementById('speedBtn'); 
+        const gameContainer = document.getElementById('game');
+        
+        const PLAYER_WIDTH = 65;
+        const ENEMY_WIDTH = 75;
+
+        function calculateLanes() {
+            const gameWidth = gameContainer.offsetWidth; 
+            const numLanes = 7; 
+            const numRoadLines = numLanes - 1;
+
+            const playableWidth = gameWidth - PLAYER_WIDTH; 
+            
+            const laneGap = playableWidth / (numLanes - 1);
+
+            lanes = [];
+            roadLinePositions = [];
+
+            for (let i = 0; i < numLanes; i++) {
+                const laneLeft = (i * laneGap);
+                lanes.push(Math.round(laneLeft));
+            }
+            
+            for (let i = 1; i <= numRoadLines; i++) {
+                const linePos = (i * (gameWidth / (numRoadLines + 1))) - (12 / 2);
+                roadLinePositions.push(Math.round(linePos));
+            }
+            
+            player.style.left = lanes[Math.floor(lanes.length / 2)] + 'px';
+        }
+
+        window.addEventListener('resize', calculateLanes);
+
+
+        function moveDir(dir) {
+            if (!gameActive || lanes.length === 0) return;
+            
+            const step = isSpeedBoost ? 2 : 1; 
+            const currentLeft = parseInt(player.style.left);
+            
+            let currentLaneIndex = -1;
+            let minDiff = Infinity;
+            lanes.forEach((lanePos, index) => {
+                const diff = Math.abs(lanePos - currentLeft);
+                if (diff < minDiff) {
+                    minDiff = diff;
+                    currentLaneIndex = index;
+                }
+            });
+
+            const nextLane = currentLaneIndex + dir * step; 
+            
+            if (nextLane >= 0 && nextLane < lanes.length) {
+                player.style.left = lanes[nextLane] + 'px';
+            } else if (nextLane < 0) {
+                 player.style.left = lanes[0] + 'px'; 
+            } else if (nextLane >= lanes.length) {
+                 player.style.left = lanes[lanes.length - 1] + 'px'; 
+            }
+        }
+        
+        speedBtn.addEventListener('mousedown', () => { isSpeedBoost = true; speedBtn.style.background = 'linear-gradient(to right, #ff4444, #cc0000)'; });
+        speedBtn.addEventListener('mouseup', () => { isSpeedBoost = false; speedBtn.style.background = 'linear-gradient(to right, #ffdd44, #ffaa00)'; });
+        speedBtn.addEventListener('touchstart', (e) => { e.preventDefault(); isSpeedBoost = true; speedBtn.style.background = 'linear-gradient(to right, #ff4444, #cc0000)'; });
+        speedBtn.addEventListener('touchend', () => { isSpeedBoost = false; speedBtn.style.background = 'linear-gradient(to right, #ffdd44, #ffaa00)'; });
+
+
+        document.getElementById('leftBtn').addEventListener('click', () => moveDir(-1));
+        document.getElementById('rightBtn').addEventListener('click', () => moveDir(1));
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowLeft') moveDir(-1);
+            if (e.key === 'ArrowRight') moveDir(1);
+            if (e.key === 'Shift') { isSpeedBoost = true; speedBtn.style.background = 'linear-gradient(to right, #ff4444, #cc0000)'; }
+        });
+        document.addEventListener('keyup', (e) => {
+            if (e.key === 'Shift') { isSpeedBoost = false; speedBtn.style.background = 'linear-gradient(to right, #ffdd44, #ffaa00)'; }
+        });
+
+        document.getElementById('leftBtn').addEventListener('touchstart', (e) => { e.preventDefault(); moveDir(-1); });
+        document.getElementById('rightBtn').addEventListener('touchstart', (e) => { e.preventDefault(); moveDir(1); });
+
+        function createEnemy() {
+            if (!gameActive || lanes.length === 0) return;
+            
+            let randomLane;
+            do {
+                randomLane = Math.floor(Math.random() * lanes.length);
+            } while (
+                randomLane === lastEnemyLane || 
+                randomLane === lastEnemyLane + 1 || 
+                randomLane === lastEnemyLane - 1
+            );
+            lastEnemyLane = randomLane;
+            
+            const enemy = document.createElement('div');
+            enemy.classList.add('enemy', colors[Math.floor(Math.random() * colors.length)]);
+            enemy.innerHTML = '<div class="wheel left"></div><div class="wheel right"></div>';
+            enemy.style.left = lanes[randomLane] + 'px'; 
+            enemy.style.top = '-140px';
+            document.getElementById('game').appendChild(enemy);
+
+            let baseSpeed = 4;
+            const scoreMultiplier = Math.floor(score / 200); 
+            const speedFactor = gameContainer.offsetHeight / 650;
+            const speed = (baseSpeed + scoreMultiplier * 0.5 + Math.random() * 1.5) * speedFactor; 
+            
+            const anim = setInterval(() => {
+                const top = parseInt(enemy.style.top);
+                enemy.style.top = (top + speed) + 'px';
+
+                if (collision(player, enemy)) {
+                    gameOver();
+                    clearInterval(anim);
+                    return;
+                }
+
+                if (top > gameContainer.offsetHeight) { 
+                    score += 10;
+                    scoreDisplay.textContent = 'Score: ' + score;
+                    enemy.remove();
+                    clearInterval(anim);
+                }
+            }, 25);
+        }
+
+        function collision(a, b) {
+            const aRect = a.getBoundingClientRect();
+            const bRect = b.getBoundingClientRect();
+            return !(
+                aRect.right < bRect.left ||
+                aRect.left > bRect.right ||
+                aRect.bottom < bRect.top ||
+                aRect.top > bRect.bottom
+            );
+        }
+
+        setInterval(() => {
+            if (!gameActive || roadLinePositions.length === 0) return;
+            roadLinePositions.forEach(pos => {
+                const line = document.createElement('div');
+                line.classList.add('road-line');
+                line.style.left = `${pos}px`;
+                document.getElementById('game').appendChild(line);
+                
+                 setTimeout(() => line.remove(), 1200); 
+            });
+        }, 180);
+
+        function gameLoop() {
+            if (!gameActive) {
+                clearInterval(enemySpawnTimer);
+                return;
+            }
+            createEnemy();
+            
+            let spawnDelay = 1400; 
+            if (score > 100) spawnDelay = 1200;
+            if (score > 300) spawnDelay = 1000;
+            if (score > 500) spawnDelay = 800;
+            
+            enemySpawnTimer = setTimeout(gameLoop, spawnDelay);
+        }
+        
+        function gameOver() {
+            gameActive = false;
+            clearTimeout(enemySpawnTimer); 
+            document.getElementById('finalScore').textContent = score;
+            document.getElementById('gameOver').style.display = 'block';
+        }
+
+        window.resetGame = function() {
+            score = 0;
+            gameActive = true;
+            lastEnemyLane = -1; 
+            scoreDisplay.textContent = 'Score: 0';
+            document.getElementById('gameOver').style.display = 'none';
+            calculateLanes();
+            document.querySelectorAll('.enemy').forEach(e => e.remove());
+            document.querySelectorAll('.road-line').forEach(e => e.remove());
+            gameLoop(); 
+        }
+
+        calculateLanes();
+        gameLoop(); 
+    </script>
+</body>
+</html>
